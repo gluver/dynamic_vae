@@ -1,0 +1,6 @@
+DATA/*
+DATA/download/dataset/dahu/*
+PRETRAIN
+*__pycache__
+*.csv
+.~lock.result.csv#

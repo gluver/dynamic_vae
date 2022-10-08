@@ -315,11 +315,16 @@ def save_features_info(feature_path, batch, iteration, log_p, mean, target):
     np.save(mean_path, np_mean)
 
 
-def extract(data_loader, model, data_task, feature_path, p_bar, noise_scale, variable_length):
+def extract(data_loader, model, data_task, feature_path, p_bar, noise_scale, variable_length,is_test=False):
     """
     Feature extraction function, the process is similar to the process in train.py
     """
     iteration = 0
+    #compute nll_loss for  anomaly detection
+    if is_test:
+        nll_losses=[]
+        nll = torch.nn.SmoothL1Loss(reduction='none')
+
     for batch in data_loader:
         batch_ = to_var(batch[0]).float()
         seq_lengths = batch[1]['seq_lengths'] if variable_length else None
@@ -330,6 +335,15 @@ def extract(data_loader, model, data_task, feature_path, p_bar, noise_scale, var
         save_features_info(feature_path, batch, iteration, log_p, mean, target)
         p_bar.update(1)
         iteration += 1
+        if is_test:
+
+            nll_loss = torch.mean(nll(log_p,target),(1,2))
+            nll_losses.append(nll_loss)
+
+    if is_test:
+        return torch.cat(nll_losses)
+        
+      
 
 
 if __name__ == '__main__':

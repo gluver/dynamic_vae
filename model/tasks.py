@@ -55,7 +55,7 @@ class Task:
         self.decoder = self.encoder[:self.decoder_dimension]
         return to_tensor(to_array(input_embedding)[:, :, self.decoder])
 
-    def target_filter(self, input_embedding):
+    def target_filter(self, input_embedding)    :
         # Output target dimension
         self.target = self.encoder[self.decoder_dimension:]
         return to_tensor(to_array(input_embedding)[:, :, self.target])
@@ -85,6 +85,7 @@ class EvTask(Task):
             [columns.index("soc"), columns.index("current"),
              columns.index("max_temp"), columns.index("max_single_volt"),
              columns.index("min_single_volt"), columns.index("volt")]).astype(int)
+             #TODO：添加min_temp
         return self.encoder
 
 def to_tensor(input_embedding):

@@ -16,6 +16,7 @@ from train import extract
 from utils import to_var, collate, Normalizer, PreprocessNormalizer
 from model import tasks
 import pickle
+import pandas as pd
 
 
 class Extraction:
@@ -34,8 +35,9 @@ class Extraction:
         with open(model_params_path, 'r') as load_f:
             prams_dict = json.load(load_f)
         model_params = prams_dict['args']
+        model_tag=prams_dict['train_time_start'].split('/')[1]
         start_time = time.time()
-        data_pre = dataset.Dataset(model_params["test_path"])
+        data_pre = dataset.Dataset(model_params["test_path"],is_test=True)
         self.normalizer = pickle.load(open(os.path.join(self.args.current_model_path, "norm.pkl"), 'rb'))
         test = PreprocessNormalizer(data_pre, normalizer_fn=self.normalizer.norm_func)
 
@@ -47,7 +49,7 @@ class Extraction:
         model.encoder_filter = task.encoder_filter
         model.decoder_filter = task.decoder_filter
         model.noise_scale = model_params["noise_scale"]
-        data_loader = DataLoader(dataset=test, batch_size=model_params["batch_size"], shuffle=True,
+        data_loader = DataLoader(dataset=test, batch_size=model_params["batch_size"], shuffle=False,
                                  num_workers=model_params["jobs"], drop_last=False,                           
                                  pin_memory=torch.cuda.is_available(),
                                  collate_fn=collate if model_params["variable_length"] else None)
@@ -56,11 +58,18 @@ class Extraction:
         print("model", model)
 
         # Start extracting features using trained models
+        
         model.eval()
         p_bar = tqdm(total=len(data_loader), desc='saving', ncols=100, mininterval=1, maxinterval=10, miniters=1)
-        extract(data_loader, model, task, model_params["save_feature_path"], p_bar, model_params["noise_scale"],
-                model_params["variable_length"])
+        nll_losses=extract(data_loader, model, task, model_params["save_feature_path"], p_bar, model_params["noise_scale"],
+                model_params["variable_length"],is_test=True)
+        nll_losses=nll_losses.cpu().detach().numpy()
         p_bar.close()
+        # Save scores to csv
+        df=pd.DataFrame.from_dict({'file_name':os.listdir(model_params["test_path"]),'score':nll_losses})
+        df.to_csv("result_"+model_tag+".csv",index=False)
+        print("Anomoly detection socre saved at result.csv")
+        # Save feature extration result
         print("Feature extraction of all test saved at", model_params["save_feature_path"])
         print("The total time consuming：", time.time() - start_time)
 
@@ -71,6 +80,6 @@ if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"] = "1"
     parser = argparse.ArgumentParser(description='Train Example')
     parser.add_argument('--current_model_path', type=str,
-                        default='2021-12-04-15-19-38/model/')
+                        default='/home/credog/GitRepos/dynamic_vae/PRETRAIN/2022-10-08-17-48-12/model/')
     args = parser.parse_args()
     Extraction(args).main()

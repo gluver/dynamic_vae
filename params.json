@@ -1,8 +1,8 @@
 {
   "task": "ev",
   "epochs":3,
-  "jobs": 32,
-  "batch_size": 128,
+  "jobs": 6,
+  "batch_size":256,
   "learning_rate": 0.001,
   "cosine_factor": 1.0,
   "rnn_type": "gru",
@@ -29,5 +29,7 @@
   "granularity_car": 1000,
   "num_granularity_car": 200,
   "use_flag": "rec_error",
-  "train_path": "DATA/dataset/dahu/test_mulmileage"
+  "train_path": "DATA/Train",
+  "test_path": "DATA/Test_A"
 }
+
